@@ -1,0 +1,18 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-webgl'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+await page.goto('http://localhost:3000', { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+await page.screenshot({ path: 'shots/menu.png' });
+await page.click('#start-btn');
+await page.waitForTimeout(6000);
+await page.screenshot({ path: 'shots/combat.png' });
+await page.keyboard.down('KeyW');
+await page.waitForTimeout(1000);
+await page.keyboard.up('KeyW');
+await page.keyboard.down('KeyD');
+await page.waitForTimeout(1000);
+await page.keyboard.up('KeyD');
+await page.screenshot({ path: 'shots/combat2.png' });
+await browser.close();
+console.log('done');
