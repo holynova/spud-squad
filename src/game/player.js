@@ -164,12 +164,19 @@ export class Player {
     }
   }
 
+  _abilityActive(type) {
+    return this.abilityT > 0 && this.char.ability.type === type;
+  }
+
   _fireWeapon(w) {
     const s = weaponStats(w.def, w.level);
     const game = this.game;
     const aim = game.aimVector();
     w.angle = Math.atan2(aim.z, aim.x);
-    w.cd = s.cd / this.attackSpeedMul;
+    const asMul = this.attackSpeedMul * (this._abilityActive('haste') ? 1.8 : 1);
+    const pierceBonus = this._abilityActive('pierce') ? 3 : 0;
+    const effCrit = this.critChance + (this._abilityActive('crit') ? 0.4 : 0);
+    w.cd = s.cd / asMul;
 
     const mx = this.x + Math.cos(this.facing) * 0.6;
     const mz = this.z + Math.sin(this.facing) * 0.6;
@@ -189,8 +196,8 @@ export class Player {
           kind: 'bullet', x: mx, y: 0.8, z: mz,
           vx: Math.cos(a) * s.speed, vz: Math.sin(a) * s.speed,
           damage: s.damage * this.damageMul, life: s.life, radius: s.size,
-          knock: s.knock, color: w.def.color, pierce: 0,
-          critChance: this.critChance, critDamage: this.critDamage,
+          knock: s.knock, color: w.def.color, pierce: pierceBonus,
+          critChance: effCrit, critDamage: this.critDamage,
         });
         game.particles.trail(mx, 0.8, mz, wColor, 0.15, 0.1);
       }
@@ -200,8 +207,8 @@ export class Player {
         kind: 'tesla', x: mx, y: 0.8, z: mz,
         vx: Math.cos(w.angle) * s.speed, vz: Math.sin(w.angle) * s.speed,
         damage: s.damage * this.damageMul, life: s.life, radius: s.size,
-        bounces: s.bounces, decay: s.decay, color: w.def.color,
-        critChance: this.critChance, critDamage: this.critDamage,
+        bounces: s.bounces + (this._abilityActive('chain') ? 4 : 0), decay: s.decay, color: w.def.color,
+        critChance: effCrit, critDamage: this.critDamage,
       });
     } else if (w.def.id === 'rocket') {
       audio.shot();
@@ -211,7 +218,7 @@ export class Player {
         damage: s.damage * this.damageMul, life: s.life, radius: s.size,
         knock: s.knock, color: w.def.color, explode: true,
         blastRadius: s.radius * this.areaMul,
-        critChance: this.critChance, critDamage: this.critDamage,
+        critChance: effCrit, critDamage: this.critDamage,
       });
       game.particles.burst({ x: mx, y: 0.8, z: mz, count: 8, speed: 3, color: [1, 0.5, 0.2], size: 0.3, life: 0.25, gravity: 0 });
     } else if (w.def.id === 'frost') {
@@ -225,10 +232,10 @@ export class Player {
         });
       }
       game.frostCone(this, s, mx, mz, w.angle);
-      w.cd = s.cd / this.attackSpeedMul;
+      w.cd = s.cd / asMul;
     } else if (w.def.id === 'orbital') {
       game.orbitalStrike(this, s);
-      w.cd = s.cd / this.attackSpeedMul;
+      w.cd = s.cd / asMul;
     } else if (w.def.id === 'knife') {
       const count = s.count || 1;
       for (let i = 0; i < count; i++) {
@@ -238,7 +245,7 @@ export class Player {
           vx: Math.cos(a) * s.speed, vz: Math.sin(a) * s.speed,
           damage: s.damage * this.damageMul, life: s.life, radius: s.size,
           knock: s.knock, color: w.def.color, boomerang: true,
-          critChance: this.critChance, critDamage: this.critDamage,
+          critChance: effCrit, critDamage: this.critDamage,
         });
         game.particles.trail(mx, 0.8, mz, [1, 0.9, 0.4], 0.2, 0.15);
       }
@@ -247,8 +254,8 @@ export class Player {
         kind: 'bullet', x: mx, y: 0.8, z: mz,
         vx: Math.cos(w.angle) * s.speed, vz: Math.sin(w.angle) * s.speed,
         damage: s.damage * this.damageMul, life: s.life, radius: s.size,
-        knock: s.knock, color: w.def.color, pierce: s.pierce || 0,
-        critChance: this.critChance, critDamage: this.critDamage,
+        knock: s.knock, color: w.def.color, pierce: (s.pierce || 0) + pierceBonus,
+        critChance: effCrit, critDamage: this.critDamage,
       });
       game.particles.trail(mx, 0.8, mz, wColor, 0.12, 0.08);
     }
@@ -264,7 +271,7 @@ export class Player {
 
   takeDamage(amount) {
     if (!this.alive || this.iframes > 0) return;
-    const reduced = amount * (1 - this.armor);
+    const reduced = amount * (1 - this.armor) * (this._abilityActive('shield') ? 0.4 : 1);
     this.hp -= reduced;
     this.iframes = PLAYER.iframes;
     this.game.particles.burst({
@@ -283,7 +290,7 @@ export class Player {
   }
 
   addXp(amount) {
-    this.xp += amount;
+    this.xp += amount * (this.xpMul || 1);
     while (this.xp >= this.xpNeed && this.level < 50) {
       this.xp -= this.xpNeed;
       this.level++;
@@ -293,7 +300,7 @@ export class Player {
   }
 
   addGold(amount) {
-    this.gold += Math.round(amount);
+    this.gold += Math.round(amount * (this.goldMul || 1));
   }
 
   dispose() {

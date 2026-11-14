@@ -205,8 +205,29 @@ export class Game {
     this.onWaveEnd?.(this.wave);
   }
 
+  togglePause() {
+    if (this.state === STATE.PLAYING) {
+      this.state = STATE.PAUSED;
+      this.onPause?.(true);
+    } else if (this.state === STATE.PAUSED) {
+      this.state = STATE.PLAYING;
+      this.onPause?.(false);
+    }
+  }
+
+  quitToMenu() {
+    this.state = STATE.MENU;
+    this.onQuitToMenu?.();
+  }
+
   update(dt) {
     this.time += dt;
+
+    // Escape toggles pause both ways (edge-triggered: holding it must not
+    // immediately re-pause after resuming).
+    const escDown = this.input.paused;
+    if (escDown && !this._escWasDown) this.togglePause();
+    this._escWasDown = escDown;
 
     if (this.state === STATE.PLAYING && this.player) {
       this.runTime += dt;
@@ -215,10 +236,11 @@ export class Game {
       const input = this.input.axis;
       this.player.update(dt, { x: input.x, y: input.y, dash: this.input.dashing });
 
-      if (this.input.paused) {
-        this.state = STATE.PAUSED;
-        return;
-      }
+      // Q casts the character ability (edge-triggered: holding Q must not
+      // auto-cast the moment the cooldown ends).
+      const qDown = this.input.ability;
+      if (qDown && !this._qWasDown) this.player.useAbility();
+      this._qWasDown = qDown;
 
       this.enemies.update(dt, this.player);
       this.projectiles.update(dt);
@@ -303,7 +325,7 @@ export class Game {
       if (!e.alive) continue;
       const dx = e.x - mx, dz = e.z - mz;
       const d = Math.hypot(dx, dz);
-      if (d > s.range + e.radius) continue;
+      if (d > s.range * player.areaMul + e.radius) continue;
       const dot = d < 0.01 ? 1 : (dx / d) * Math.cos(baseAngle) + (dz / d) * Math.sin(baseAngle);
       if (dot < Math.cos(s.cone) - 0.1) continue;
       e.damage(s.damage * player.damageMul, 'frost');
@@ -319,8 +341,9 @@ export class Game {
   orbitalStrike(player, s) {
     for (let i = 0; i < s.count; i++) {
       const a = (i / s.count) * Math.PI * 2 + this.time * s.spin;
-      const ox = player.x + Math.cos(a) * s.radius;
-      const oz = player.z + Math.sin(a) * s.radius;
+      const orbitR = s.radius * player.areaMul;
+      const ox = player.x + Math.cos(a) * orbitR;
+      const oz = player.z + Math.sin(a) * orbitR;
       this.particles.emit({
         x: ox, y: 0.8, z: oz, color: [0.5, 1, 0.7],
         size: 0.3, life: 0.2, vx: 0, vy: 0, vz: 0, gravity: 0,
@@ -418,7 +441,7 @@ export class Game {
       this.addTrauma(0.25);
     }
     this.pickups.burstXp(enemy.x, enemy.z, enemy.xpValue);
-    if (Math.random() < ECONOMY.goldPerKillChance || enemy.boss) {
+    if (Math.random() < ECONOMY.goldPerKill || enemy.boss) {
       const gold = Math.round(rand(enemy.goldValue[0], enemy.goldValue[1]));
       this.pickups.spawn('gold', enemy.x, enemy.z, gold);
     }
@@ -510,10 +533,15 @@ export class Game {
     );
     this.camera.lookAt(this.camTarget.x + this.shakeX, 0, this.camTarget.z);
     this.renderer.render(this.scene, this.camera);
+    this.onRender?.(dt);
   }
 
   resize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
+    const aspect = window.innerWidth / window.innerHeight;
+    this.camera.aspect = aspect;
+    // In portrait the fixed 50 FOV shows only a narrow slice of the arena;
+    // widen it so the player can see threats approaching from the sides.
+    this.camera.fov = aspect < 1 ? Math.min(75, CAMERA.fov / Math.pow(aspect, 0.6)) : CAMERA.fov;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }

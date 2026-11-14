@@ -41,13 +41,15 @@ export class Enemy {
     this.elite = def.elite || false;
     this.boss = def.boss || false;
     this.color = def.color;
-    this.contactDamage = def.damage;
-
     const scale = enemyScale(wave);
-    this.maxHp = def.hp * scale.hp;
+    // Bosses use the linear damage scale for HP: the quadratic HP scale
+    // (55x at wave 20) made the wave-15/20 bosses effectively unkillable,
+    // so the win condition could never be reached.
+    this.maxHp = def.hp * (def.boss ? scale.damage : scale.hp);
     this.hp = this.maxHp;
     this.speed = def.speed * scale.speed;
     this.attackDamage = def.damage * scale.damage;
+    this.contactDamage = this.attackDamage;
     this.xpValue = def.xp * scale.xp;
     this.goldValue = def.gold;
     this.alive = true;
@@ -145,14 +147,9 @@ export class Enemy {
       });
     }
 
-    p.addXp(this.xpValue);
+    // XP and gold are granted through pickups (burstXp / gold drop in
+    // onEnemyKilled); granting them here too paid everything twice.
     p.kills++;
-
-    if (Math.random() < 0.15 || this.boss) {
-      const gold = Math.round(rand(this.goldValue[0], this.goldValue[1]));
-      p.addGold(gold);
-      game.floaters.spawn(this.x, this.radius + 1, this.z, `+${gold}g`, 'gold');
-    }
 
     if (this.def.splitInto) {
       for (let i = 0; i < (this.def.splitCount || 2); i++) {
@@ -228,7 +225,7 @@ export class Enemy {
         this.shotCd -= dt;
         if (this.shotCd <= 0 && d < 20) {
           this.shotCd = this.def.shotCd;
-          game.enemyShoot(this, nx, nz, this.def.bulletSpeed, this.def.bulletDamage);
+          game.enemyShoot(this, nx, nz, this.def.bulletSpeed, this.attackDamage);
         }
         break;
 
@@ -253,6 +250,10 @@ export class Enemy {
       case 'boss_ring':
         this.ringCd -= dt;
         this.chargeCd -= dt;
+        if (this.dashT > 0) {
+          this.dashT -= dt;
+          spd = this.speed * 4;
+        }
         if (this.ringCd <= 0) {
           this.ringCd = this.def.ringCd;
           game.bossRing(this, this.def.ringBullets, this.def.ringSpeed);

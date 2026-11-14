@@ -110,7 +110,7 @@ export class PickupSystem {
 
   update(dt) {
     const p = this.game.player;
-    p.pickupRange = 2.5 + p.level * 0.1;
+    p.pickupRange = (2.5 + p.level * 0.1) * (1 + (p.pickupRangeBonus || 0));
     for (let i = this.list.length - 1; i >= 0; i--) {
       const pk = this.list[i];
       pk.update(dt);
