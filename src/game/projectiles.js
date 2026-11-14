@@ -101,6 +101,19 @@ export class Projectile {
       });
     }
 
+    if (this.kind === 'enemy') {
+      const p = this.game.player;
+      if (p && p.alive) {
+        const d = dist(this.x, this.z, p.x, p.z);
+        if (d < this.radius + p.radius) {
+          p.takeDamage(this.damage);
+          this._destroy();
+          return;
+        }
+      }
+      return;
+    }
+
     for (const e of this.game.enemies.list) {
       if (!e.alive || this.hitSet.has(e)) continue;
       const d = dist(this.x, this.z, e.x, e.z);

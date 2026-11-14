@@ -3,6 +3,9 @@ export class Input {
     this.keys = new Set();
     this.mouse = { x: 0, y: 0, down: false };
     this._axis = { x: 0, y: 0 };
+    this.touchMove = { x: 0, y: 0 };
+    this.touchDash = false;
+    this.touchAbility = false;
 
     window.addEventListener('keydown', (e) => {
       this.keys.add(e.code);
@@ -27,11 +30,18 @@ export class Input {
     if (this.keys.has('KeyD') || this.keys.has('ArrowRight')) x += 1;
     const len = Math.hypot(x, y);
     if (len > 0) { x /= len; y /= len; }
+    // Touch joystick overrides the keyboard when pushed past the dead zone.
+    const tLen = Math.hypot(this.touchMove.x, this.touchMove.y);
+    if (tLen > 0.12) {
+      x = this.touchMove.x;
+      y = this.touchMove.y;
+    }
     this._axis.x = x;
     this._axis.y = y;
     return this._axis;
   }
 
-  get dashing() { return this.keys.has('Space'); }
+  get dashing() { return this.keys.has('Space') || this.touchDash; }
+  get ability() { return this.keys.has('KeyQ') || this.touchAbility; }
   get paused() { return this.keys.has('Escape'); }
 }

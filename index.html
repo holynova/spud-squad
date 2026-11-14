@@ -27,7 +27,9 @@
       text-shadow: 0 0 60px rgba(255, 177, 59, 0.3);
       margin-bottom: 8px;
     }
-    .menu-screen .subtitle { color: #8892b0; font-size: 18px; margin-bottom: 40px; letter-spacing: 2px; }
+    .menu-screen .subtitle { color: #8892b0; font-size: 18px; margin-bottom: 12px; letter-spacing: 2px; }
+    .menu-screen .goal { color: #ffb13b; font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .menu-screen .controls-hint { color: #8892b0; font-size: 13px; margin-bottom: 32px; }
 
     .char-select { display: flex; gap: 16px; justify-content: center; margin-bottom: 32px; }
     .char-card {
@@ -40,6 +42,9 @@
     .char-card .icon { font-size: 40px; margin-bottom: 8px; }
     .char-card .name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
     .char-card .desc { font-size: 11px; color: #8892b0; line-height: 1.4; }
+    .char-card .stats { font-size: 11px; color: #c8d0e0; line-height: 1.5; margin-top: 8px; }
+    .char-card .weapon { font-size: 11px; color: #ffb13b; line-height: 1.5; margin-top: 4px; }
+    .char-card .ability { font-size: 11px; color: #7dffb0; line-height: 1.5; margin-top: 2px; }
 
     .btn {
       pointer-events: all; cursor: pointer; border: none; outline: none;
@@ -51,10 +56,49 @@
     .btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(255, 177, 59, 0.5); }
 
     #hud {
-      position: absolute; top: 0; left: 0; right: 0; padding: 16px 24px;
+      position: absolute; inset: 0;
       display: none; pointer-events: none;
     }
-    #hud .top-bar { display: flex; justify-content: space-between; align-items: flex-start; }
+    #hud .top-bar { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 24px; }
+    #hud .xp-bar {
+      width: 280px; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px;
+      overflow: hidden; border: 1px solid rgba(255,255,255,0.15); margin-top: 8px;
+    }
+    #hud .xp-fill {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, #41b8ff, #7dffb0);
+      transition: width 0.2s;
+    }
+    #hud .xp-text { font-size: 11px; color: #8892b0; margin-top: 3px; text-align: center; }
+    #hud .hud-btn {
+      pointer-events: all; cursor: pointer; border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.5); color: #fff; border-radius: 8px;
+    }
+    #pause-btn { width: 40px; height: 40px; font-size: 16px; margin-left: 12px; flex: none; }
+    #weapon-bar {
+      position: absolute; left: 24px; bottom: 24px;
+      display: flex; gap: 8px;
+    }
+    #weapon-bar .wslot {
+      width: 44px; height: 44px; border-radius: 8px; position: relative;
+      background: rgba(0,0,0,0.55); border: 2px solid var(--wcolor, #888);
+      color: var(--wcolor, #fff); font-size: 20px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #weapon-bar .wslot span {
+      position: absolute; right: 2px; bottom: 0;
+      font-size: 10px; color: #fff;
+    }
+    #ability-btn {
+      position: absolute; right: 24px; bottom: 24px;
+      width: 76px; height: 76px; border-radius: 50%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border: 2px solid #ffb13b; font-size: 14px; font-weight: 700;
+    }
+    #ability-btn .key { font-size: 10px; color: #8892b0; font-weight: 400; }
+    #ability-btn #ability-cd { font-size: 11px; color: #7dffb0; font-weight: 400; }
+    #ability-btn.cooling { border-color: #555; opacity: 0.6; }
+    #ability-btn.cooling #ability-cd { color: #8892b0; }
     #hud .hp-bar {
       width: 280px; height: 20px; background: rgba(0,0,0,0.5); border-radius: 10px;
       overflow: hidden; border: 1px solid rgba(255,255,255,0.15);
@@ -102,11 +146,78 @@
     #gameover-screen .summary { font-size: 18px; color: #8892b0; margin-bottom: 32px; line-height: 2; }
     #gameover-screen .summary span { color: #ffb13b; font-weight: 700; }
 
-    #crosshair {
-      position: absolute; width: 20px; height: 20px;
-      border: 2px solid rgba(255,255,255,0.6); border-radius: 50%;
-      pointer-events: none; display: none;
-      transform: translate(-50%, -50%);
+    .upgrade-card .key-hint {
+      margin-top: 12px; font-size: 11px; color: #555;
+      border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;
+      display: inline-block; padding: 2px 8px;
+    }
+    .btn-ghost {
+      background: transparent; color: #fff;
+      border: 2px solid rgba(255,255,255,0.3); margin-top: 12px;
+    }
+    #pause-screen {
+      position: absolute; inset: 0; display: none;
+      background: rgba(0,0,0,0.75); pointer-events: all;
+      flex-direction: column; align-items: center; justify-content: center;
+      color: #fff; text-align: center;
+    }
+    #pause-screen h2 { font-size: 48px; color: #ffb13b; margin-bottom: 8px; letter-spacing: 6px; }
+    #pause-screen .pause-sub { font-size: 14px; color: #8892b0; margin-bottom: 28px; }
+    #pause-screen .pause-warning { font-size: 13px; color: #ff7a3b; margin-top: 12px; }
+    #pause-screen .pause-hint { font-size: 12px; color: #555; margin-top: 20px; }
+
+    #touch-ui { display: none; }
+    #stick {
+      position: absolute; left: 24px; bottom: 24px;
+      width: 124px; height: 124px; border-radius: 50%;
+      background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.2);
+      touch-action: none; pointer-events: all;
+    }
+    #stick-knob {
+      position: absolute; left: 50%; top: 50%;
+      width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%;
+      background: rgba(255,177,59,0.7); border: 2px solid #ffb13b;
+    }
+    .touch-btn {
+      position: absolute; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);
+      background: rgba(0,0,0,0.5); color: #fff; font-size: 15px; font-weight: 700;
+      touch-action: none; pointer-events: all;
+    }
+    #btn-dash { right: 24px; bottom: 116px; width: 68px; height: 68px; }
+
+    @media (pointer: coarse) {
+      body.in-game #touch-ui { display: block; }
+      .controls-hint { display: none; }
+      .controls-hint.touch-only { display: block; }
+      #weapon-bar { bottom: 164px; }
+    }
+    @media (pointer: fine) {
+      .controls-hint.touch-only { display: none; }
+    }
+    @media (max-width: 720px) {
+      .menu-screen h1 { font-size: 44px; }
+      .char-select { flex-wrap: wrap; gap: 10px; }
+      .char-card { width: 120px; padding: 12px 8px; }
+      #levelup-screen .cards { flex-wrap: wrap; justify-content: center; }
+      .upgrade-card { width: 160px; padding: 16px; }
+      #wave-banner { font-size: 32px; }
+      #hud .hp-bar, #hud .xp-bar { width: 180px; }
+      #gameover-screen h2 { font-size: 36px; }
+      #pause-screen h2 { font-size: 36px; }
+    }
+    @media (max-width: 560px) {
+      .menu-screen h1 { font-size: 32px; letter-spacing: 2px; }
+      .menu-screen .subtitle { font-size: 14px; margin-bottom: 8px; }
+      .char-card { width: 104px; }
+      .char-card .icon { font-size: 28px; }
+      .upgrade-card { width: min(280px, 86vw); }
+      #levelup-screen .cards { flex-direction: column; gap: 12px; }
+      #levelup-screen h2 { font-size: 28px; }
+      #hud .hp-bar, #hud .xp-bar { width: 150px; }
+      #hud .stats { font-size: 12px; }
+      #wave-banner { font-size: 26px; letter-spacing: 3px; }
+      .btn { padding: 12px 32px; font-size: 16px; }
+      #ability-btn { width: 64px; height: 64px; font-size: 12px; }
     }
   </style>
 </head>
@@ -116,6 +227,9 @@
       <div id="menu" class="menu-screen">
         <h1>SPUD SQUAD</h1>
         <p class="subtitle">3D SURVIVORS</p>
+        <p class="goal">目标：撑过 20 波，击败虚空吞噬</p>
+        <p class="controls-hint">WASD 移动 / 空格翻滚 / Q 技能 / Esc 暂停</p>
+        <p class="controls-hint touch-only">左侧摇杆移动，右侧按钮翻滚、释放技能</p>
         <div class="char-select" id="char-select"></div>
         <button class="btn" id="start-btn">开始游戏</button>
         <p style="margin-top:24px;"><a href="https://github.com/holynova/spud-squad" target="_blank" style="color:#8892b0;text-decoration:none;font-size:14px;">GitHub</a></p>
@@ -126,14 +240,24 @@
         <div>
           <div class="hp-bar"><div class="hp-fill" id="hp-fill"></div></div>
           <div class="hp-text" id="hp-text">100 / 100</div>
+          <div class="xp-bar"><div class="xp-fill" id="xp-fill"></div></div>
+          <div class="xp-text" id="xp-text">0 / 9</div>
         </div>
         <div class="stats">
           <div>波次: <span id="stat-wave">1</span></div>
+          <div><span id="stat-time">准备 2 秒</span></div>
           <div>击杀: <span id="stat-kills">0</span></div>
           <div>金币: <span id="stat-gold">0</span></div>
           <div>等级: <span id="stat-level">1</span></div>
         </div>
+        <button id="pause-btn" class="hud-btn" title="暂停">⏸</button>
       </div>
+      <div id="weapon-bar"></div>
+      <button id="ability-btn" class="hud-btn ability">
+        <span id="ability-name">狂暴</span>
+        <span id="ability-cd">就绪</span>
+        <span class="key">Q</span>
+      </button>
     </div>
     <div id="wave-banner"></div>
     <div id="levelup-screen">
@@ -145,7 +269,18 @@
       <div class="summary" id="gameover-summary"></div>
       <button class="btn" id="restart-btn">重新开始</button>
     </div>
-    <div id="crosshair"></div>
+    <div id="pause-screen">
+      <h2>暂停</h2>
+      <p class="pause-sub" id="pause-sub"></p>
+      <button class="btn" id="resume-btn">继续游戏</button>
+      <button class="btn btn-ghost" id="abandon-btn">放弃本局</button>
+      <p class="pause-warning" id="abandon-warning" style="display:none">放弃将丢失本局进度</p>
+      <p class="pause-hint">按 Esc 继续</p>
+    </div>
+    <div id="touch-ui">
+      <div id="stick"><div id="stick-knob"></div></div>
+      <button id="btn-dash" class="touch-btn">翻滚</button>
+    </div>
   </div>
   <script type="module" src="/src/main.js"></script>
 </body>
